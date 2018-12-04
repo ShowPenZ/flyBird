@@ -17,7 +17,7 @@ module.exports = {
 		historyApiFallback: true, //不跳转
 		inline: true, //实时刷新,
 		port: 8082,
-		host: '192.168.1.104',
+		host: '192.168.1.39',
 		publicPath: '/',
 		hot: true // 开启热模块替换
 	},
@@ -35,7 +35,7 @@ module.exports = {
 			},
 			{
 				test: /\.(ico|jpg|jpeg|png|gif|svg|mp4|woff2?|eot|ttf|otf)$/,
-				loader: 'url-loader',
+				loader: 'file-loader',
 				options: {
 					limit: 10000,
 					name: 'images/[name].[hash:8].[ext]'
@@ -83,7 +83,7 @@ module.exports = {
 			page: path.resolve(__dirname, './src/page'),
 			js: path.resolve(__dirname, './src/js'),
 			components: path.resolve(__dirname, './src/components'),
-			models: path.resolve(__dirname, './src/images')
+			images: path.resolve(__dirname, './src/images')
 			// 'api': path.resolve(__dirname, '../src/api'),
 			// 'assets': path.resolve(__dirname, '../src/assets'),
 			// 'views': path.resolve(__dirname, '../src/views'),

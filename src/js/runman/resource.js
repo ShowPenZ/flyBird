@@ -9,8 +9,15 @@ var mediator = require('./mediator');
 var resource = {
 	loadedRes: {},
 	res: [
-		{ id: 'fish', src: require('../../images/fish.png') },
-		{ id: 'bg', src: require('../../images/bg.png') }
+		{ id: 'fish', src: require('images/fish.png') },
+		{ id: 'bg', src: require('images/bg.png') },
+		{ id: 'bg1', src: require('images/bgs.png') },
+		{ id: 'ground', src: require('images/ground.png') },
+		{ id: 'ready', src: require('images/ready.png') },
+		{ id: 'over', src: require('images/over.png') },
+		{ id: 'number', src: require('images/number.png') },
+		{ id: 'bird', src: require('images/bird.png') },
+		{ id: 'holdback', src: require('images/holdback.png') }
 	],
 	load: function() {
 		var res = this.res;

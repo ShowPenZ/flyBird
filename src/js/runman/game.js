@@ -7,6 +7,9 @@ var Bitmap = require('../hilo/view/Bitmap');
 var mediator = require('./mediator');
 var resource = require('./resource');
 var loading = require('./loading');
+var ReadyScene = require('./readyScene');
+var Bird = require('./bird');
+
 
 /**
  * @module runman/game
@@ -18,8 +21,8 @@ var loading = require('./loading');
  * @requires runman/loading
  */
 
-var gameWidth = 320;
-var gameHeight = 400;
+var gameWidth = 720;
+var gameHeight = 1280;
 var stageScaleX = innerWidth / gameWidth;
 var stageScaleY = innerHeight / gameHeight;
 
@@ -62,27 +65,9 @@ var game = {
 			scaleY: stageScaleY
 		}));
 
-		//创建TextureAtlas纹理集
-		//TextureAtlas纹理集是将许多小的纹理图片整合到一起的一张大图。
-		//这个类可根据一个纹理集数据读取纹理小图、精灵动画等。
-		var atlas = (this.atlas = new TextureAtlas({
-			image: resource.get('fish'),
-			width: 174,
-			height: 1512,
-			frames: {
-				frameWidth: 174,
-				frameHeight: 126,
-				numFrames: 12
-			},
-			sprites: {
-				fish: { from: 0, to: 7 }
-			}
-		}));
-
 		//创建晶振
 		var ticker = (this.ticker = new Ticker(60));
 		ticker.addTick(stage);
-		// ticker.addTick(this);
 		ticker.addTick(Tween);
 		ticker.start();
 
@@ -93,51 +78,78 @@ var game = {
 			stage.resize(gameWidth, gameHeight, true);
 		};
 	},
-	_initScene: function() {
-        //创建动画精灵类
-        let that = this;
-		var fish = (this.fish = new Sprite({
-			frames: this.atlas.getSprite('fish'),
-			x: 0,
-			y: 100,
-			interval: 6, // 精灵动画的帧间隔，如果timeBased为true，则单位为毫秒，否则为帧数。
-			timeBased: false, //指定精灵动画是否是以时间为基准。默认为false，即以帧为基准。
-			loop: true, //判断精灵是否可以循环播放
-			onUpdate: function() {
-				// console.log(that.stage.width, this.x, this.pivotX);
-				if (this.x > that.stage.width - this.pivotX) {
-					this.x = -100;
-				} else {
-					this.x += 3;
-				}
-			}
-		}));
 
-		// var fish = (this.fish = new Bitmap({
-		// 	x: 100,
+	_initScene: function() {
+		//创建动画精灵类
+		let that = this;
+		// var fish = (this.fish = new Sprite({
+		// 	frames: this.atlas.getSprite('fish'),
+		// 	x: 0,
 		// 	y: 100,
-		// 	image: resource.get('fish'),
-		// 	rect: [0, 0, 174, 126],
+		// 	interval: 6, // 精灵动画的帧间隔，如果timeBased为true，则单位为毫秒，否则为帧数。
+		// 	timeBased: false, //指定精灵动画是否是以时间为基准。默认为false，即以帧为基准。
+		// 	loop: true, //判断精灵是否可以循环播放
 		// 	onUpdate: function() {
-		// 		this.alpha += this.alphaSpeed;
-		// 		if (this.alpha < 0) {
-		// 			this.alpha = 0;
-		// 			this.alphaSpeed *= -1;
-		// 		} else if (this.alpha > 1) {
-		// 			this.alpha = 1;
-		// 			this.alphaSpeed *= -1;
+		// 		// console.log(that.stage.width, this.x, this.pivotX);
+		// 		if (this.x > that.stage.width - this.pivotX) {
+		// 			this.x = -100;
+		// 		} else {
+		// 			this.x += 3;
 		// 		}
 		// 	}
 		// }));
-		// fish.alphaSpeed = 0.02;
 
-        //创建背景
+		//初始化
+		this.initBackground();
+		this.initReadyScene();
+		this.initBird();
+
+		//准备游戏
+		this.gameReady();
+		
+	},
+
+	initBackground: function() {
 		var bg = (this.bg = new Bitmap({
-			image: resource.get('bg')
+			image: resource.get('bg1')
 		}));
 
-        //将fish类，bg类添加到舞台中
-		this.stage.addChild(bg, fish);
+		//创建地面
+		var ground = (this.ground = new Bitmap({
+			image: resource.get('ground')
+			// rect:[0, 0, 375, 667]
+		}));
+
+		//防止地面在舞台最底部
+		ground.y = this.stage.height - this.ground.height;
+
+		//循环移动地面
+		Tween.to(this.ground, { x: -60 }, { duration: 300, loop: true });
+		this.stage.addChild(bg, ground);
+	},
+
+	initReadyScene: function() {
+		//准备背景
+		var readyScene = (this.readyScene = new ReadyScene({
+			width: this.stage.width,
+			height: this.stage.height
+		}));
+
+		this.stage.addChild(readyScene);
+	},
+
+	initBird:function() {
+		var bird = (this.bird = new Bird({
+			startX: 100,
+			startY: this.stage.height >> 1,
+		}));
+
+		this.stage.addChild(bird);
+	},
+
+
+	gameReady:function() {
+		this.bird.getReady();
 	}
 };
 
