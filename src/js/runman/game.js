@@ -1,15 +1,13 @@
-var Stage = require('../hilo/view/Stage');
-var Tween = require('../hilo/tween/Tween');
-var TextureAtlas = require('../hilo/util/TextureAtlas');
-var Sprite = require('../hilo/view/Sprite');
-var Ticker = require('../hilo/util/Ticker');
-var Bitmap = require('../hilo/view/Bitmap');
-var mediator = require('./mediator');
-var resource = require('./resource');
-var loading = require('./loading');
-var ReadyScene = require('./readyScene');
-var Bird = require('./bird');
-
+const Stage = require('../hilo/view/Stage');
+const Tween = require('../hilo/tween/Tween');
+const Ticker = require('../hilo/util/Ticker');
+const Bitmap = require('../hilo/view/Bitmap');
+const mediator = require('./mediator');
+const resource = require('./resource');
+const loading = require('./loading');
+const ReadyScene = require('./readyScene');
+const Bird = require('./bird');
+const Hilo = require('../hilo/core/Hilo');
 
 /**
  * @module runman/game
@@ -21,12 +19,12 @@ var Bird = require('./bird');
  * @requires runman/loading
  */
 
-var gameWidth = 720;
-var gameHeight = 1280;
-var stageScaleX = innerWidth / gameWidth;
-var stageScaleY = innerHeight / gameHeight;
+const gameWidth = 720;
+const gameHeight = 1280;
+let stageScaleX = innerWidth / gameWidth;
+let stageScaleY = innerHeight / gameHeight;
 
-var game = {
+let game = {
 	init: function(stageContainer) {
 		this.stageContainer = stageContainer;
 		this.bindEvent();
@@ -34,7 +32,7 @@ var game = {
 		resource.load();
 	},
 	bindEvent: function() {
-		var that = this;
+		let that = this;
 		mediator.on('resource:loaded', function(event) {
 			loading.loaded(event.detail.num);
 		});
@@ -56,7 +54,7 @@ var game = {
 	// },
 	_initStage: function() {
 		//创建舞台
-		var stage = (this.stage = new Stage({
+		let stage = (this.stage = new Stage({
 			width: gameWidth,
 			height: gameHeight,
 			renderType: 'canvas',
@@ -66,10 +64,33 @@ var game = {
 		}));
 
 		//创建晶振
-		var ticker = (this.ticker = new Ticker(60));
+		let ticker = (this.ticker = new Ticker(60));
 		ticker.addTick(stage);
 		ticker.addTick(Tween);
 		ticker.start();
+		stage.enableDOMEvent(Hilo.event.POINTER_START, true);
+		stage.on(Hilo.event.POINTER_START, this.onUserInput.bind(this));
+
+		//绑定键盘事件
+		if (document.addEventListener) {
+			document.addEventListener(
+				'keydown',
+				function(e) {
+					if (e.keyCode === 32) {
+						this.onUserInput(e);
+					}
+				}.bind(this)
+			);
+		} else {
+			document.attachEvent(
+				'onkeydown',
+				function(e) {
+					if (e.keyCode === 32) {
+						this.onUserInput(e);
+					}
+				}.bind(this)
+			);
+		}
 
 		//自适应设置
 		window.onresize = function() {
@@ -82,40 +103,23 @@ var game = {
 	_initScene: function() {
 		//创建动画精灵类
 		let that = this;
-		// var fish = (this.fish = new Sprite({
-		// 	frames: this.atlas.getSprite('fish'),
-		// 	x: 0,
-		// 	y: 100,
-		// 	interval: 6, // 精灵动画的帧间隔，如果timeBased为true，则单位为毫秒，否则为帧数。
-		// 	timeBased: false, //指定精灵动画是否是以时间为基准。默认为false，即以帧为基准。
-		// 	loop: true, //判断精灵是否可以循环播放
-		// 	onUpdate: function() {
-		// 		// console.log(that.stage.width, this.x, this.pivotX);
-		// 		if (this.x > that.stage.width - this.pivotX) {
-		// 			this.x = -100;
-		// 		} else {
-		// 			this.x += 3;
-		// 		}
-		// 	}
-		// }));
 
 		//初始化
-		this.initBackground();
-		this.initReadyScene();
-		this.initBird();
+		that.initBackground();
+		that.initReadyScene();
+		that.initBird();
 
 		//准备游戏
-		this.gameReady();
-		
+		that.gameReady();
 	},
 
 	initBackground: function() {
-		var bg = (this.bg = new Bitmap({
+		let bg = (this.bg = new Bitmap({
 			image: resource.get('bg1')
 		}));
 
 		//创建地面
-		var ground = (this.ground = new Bitmap({
+		let ground = (this.ground = new Bitmap({
 			image: resource.get('ground')
 			// rect:[0, 0, 375, 667]
 		}));
@@ -125,12 +129,13 @@ var game = {
 
 		//循环移动地面
 		Tween.to(this.ground, { x: -60 }, { duration: 300, loop: true });
+
 		this.stage.addChild(bg, ground);
 	},
 
 	initReadyScene: function() {
 		//准备背景
-		var readyScene = (this.readyScene = new ReadyScene({
+		let readyScene = (this.readyScene = new ReadyScene({
 			width: this.stage.width,
 			height: this.stage.height
 		}));
@@ -138,18 +143,37 @@ var game = {
 		this.stage.addChild(readyScene);
 	},
 
-	initBird:function() {
-		var bird = (this.bird = new Bird({
+	initBird: function() {
+		let bird = (this.bird = new Bird({
+			id:'bird',
 			startX: 100,
-			startY: this.stage.height >> 1,
+			startY: this.stage.height >> 1, //右移以为相当于除以2的1次方
+			groundY: this.ground.y - 12
 		}));
 
 		this.stage.addChild(bird);
 	},
 
-
-	gameReady:function() {
+	gameReady: function() {
+		this.state = 'ready';
+		this.readyScene.visible = true;
 		this.bird.getReady();
+	},
+
+	gameStart: function() {
+		this.state = 'playing';
+		this.readyScene.visible = false;
+		// this.holdbacks.startMove();
+	},
+
+	onUserInput: function(e) {
+		if (this.state !== 'over') {
+			//启动游戏场景
+			if (this.state !== 'playing') this.gameStart();
+			console.log(e);
+			//控制小鸟往上飞
+			this.bird.startFly();
+		}
 	}
 };
 
